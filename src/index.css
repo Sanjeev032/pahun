@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans bg-white text-luxury-black antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .serif {
+    @apply font-serif uppercase tracking-widest;
+  }
+}
+
+@layer components {
+  .luxury-button {
+    @apply inline-block px-10 py-4 bg-luxury-black text-white text-[11px] font-medium uppercase tracking-[0.2em] border border-luxury-black transition-all duration-500 hover:bg-transparent hover:text-luxury-black;
+  }
+
+  .luxury-button-outline {
+    @apply inline-block px-10 py-4 bg-transparent text-luxury-black text-[11px] font-medium uppercase tracking-[0.2em] border border-luxury-black transition-all duration-500 hover:bg-luxury-black hover:text-white;
+  }
+
+  .container-custom {
+    @apply max-w-[1440px] mx-auto px-6 md:px-12;
+  }
+}
