@@ -3,16 +3,25 @@ import Hero from './Home/Hero';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import LuxuryImage from '../components/common/LuxuryImage';
+import { COMPANY_NAME } from '../utils/constants';
+import CategorySection from '../components/home/CategorySection';
+import TailoringService from '../components/home/TailoringService';
 
 const Home = () => {
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="bg-white"
-        >
+        <div className="bg-white">
             <Hero />
+
+            <CategorySection title="MEN SELECTION" category="men" />
+            
+            <CategorySection title="WOMEN SELECTION" category="women" />
+            
+            <CategorySection title="ACCESSORIES" category="accessories" />
+
+            <CategorySection title="TAILORING" category="tailoring" />
+
+            {/* Keeping TailoringService for descriptive value, or we can move it below */}
+            <TailoringService />
 
             {/* Featured Grid */}
             <section className="py-32 bg-white">
@@ -69,11 +78,12 @@ const Home = () => {
 
                 {/* Decorative elements */}
                 <div className="absolute top-0 right-0 p-12 opacity-10">
-                    <span className="text-[150px] font-light tracking-extra serif">P</span>
+                    <span className="text-[150px] font-light tracking-extra serif">{COMPANY_NAME.charAt(0)}</span>
                 </div>
             </section>
-        </motion.div>
+        </div>
     );
 };
 
 export default Home;
+

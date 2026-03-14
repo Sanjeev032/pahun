@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const categorySchema = new mongoose.Schema(
+const categorySchema = mongoose.Schema(
     {
         name: {
             type: String,
@@ -8,9 +8,6 @@ const categorySchema = new mongoose.Schema(
             unique: true,
         },
         description: {
-            type: String,
-        },
-        image: {
             type: String,
         },
     },

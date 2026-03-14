@@ -72,6 +72,18 @@ const orderSchema = mongoose.Schema(
         deliveredAt: {
             type: Date,
         },
+        razorpayOrderId: {
+            type: String,
+            required: false,
+        },
+        trackingNumber: {
+            type: String,
+        },
+        orderStatus: {
+            type: String,
+            enum: ['Processing', 'Shipped', 'Delivered'],
+            default: 'Processing',
+        },
     },
     {
         timestamps: true,

@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { products } from '../api/products';
-import { Heart, Share2, Ruler, ChevronRight, Plus, Minus } from 'lucide-react';
+import { Heart, Share2, Ruler, ChevronRight, Plus, Minus, Loader2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addItemToCart } from '../store/slices/cartSlice';
 import { toggleWishlist } from '../store/slices/wishlistSlice';
 import SEO from '../components/common/SEO';
 import { DetailSkeleton } from '../components/common/Skeletons';
 import LuxuryImage from '../components/common/LuxuryImage';
+import productService from '../services/productService';
+import { CURRENCY } from '../utils/constants';
 
 const ProductDetail = () => {
     const { id } = useParams();
@@ -22,23 +23,35 @@ const ProductDetail = () => {
     const wishlistItems = useSelector((state) => state.wishlist.items);
 
     useEffect(() => {
-        const found = products.find(p => p.id === parseInt(id));
-        if (found) {
-            setProduct(found);
-            if (found.sizes) setSelectedSize(found.sizes[0]);
-        }
-        // Simulate network delay for premium feel
-        const timer = setTimeout(() => setIsLoading(false), 600);
-        return () => clearTimeout(timer);
+        const fetchProduct = async () => {
+            try {
+                setIsLoading(true);
+                const data = await productService.getProductById(id);
+                const prod = data.data || data;
+                setProduct(prod);
+                if (prod.sizes && prod.sizes.length > 0) {
+                    setSelectedSize(prod.sizes[0]);
+                }
+                setIsLoading(false);
+            } catch (err) {
+                setError('Failed to load product details');
+                setIsLoading(false);
+            }
+        };
+
+        fetchProduct();
     }, [id]);
 
     if (isLoading) return <DetailSkeleton />;
     if (!product) return <div className="h-screen flex items-center justify-center tracking-widest uppercase text-xs">Product Not Found</div>;
 
-    const isInWishlist = wishlistItems.some(item => item.id === product.id);
+    const isInWishlist = wishlistItems.some(item => item._id === product._id);
 
     const handleAddToCart = () => {
-        if (!selectedSize) {
+        if (product.countInStock === 0) return;
+        
+        // Skip size validation if no sizes defined in schema for this product
+        if (product.sizes && product.sizes.length > 0 && !selectedSize) {
             setError('Please select a size');
             return;
         }
@@ -46,12 +59,15 @@ const ProductDetail = () => {
         setError('');
     };
 
+    // Ensure images is an array
+    const productImages = product.images && product.images.length > 0 ? product.images : [product.image];
+
     return (
         <div className="bg-white min-h-screen pt-32 pb-24">
             <SEO
                 title={product.name}
                 description={product.description}
-                image={product.images[0]}
+                image={productImages[0]}
             />
             <div className="container-custom">
                 {/* Breadcrumbs */}
@@ -67,7 +83,7 @@ const ProductDetail = () => {
                     {/* Gallery */}
                     <div className="w-full lg:w-3/5 flex flex-col md:flex-row gap-6">
                         <div className="hidden md:flex flex-col gap-4 w-24">
-                            {product.images.map((img, i) => (
+                            {productImages.map((img, i) => (
                                 <button
                                     key={i}
                                     onClick={() => setActiveImage(i)}
@@ -89,12 +105,17 @@ const ProductDetail = () => {
                                     className="w-full h-full"
                                 >
                                     <LuxuryImage
-                                        src={product.images[activeImage]}
+                                        src={productImages[activeImage]}
                                         alt={product.name}
                                         className="w-full h-full cursor-zoom-in"
                                     />
                                 </motion.div>
                             </AnimatePresence>
+                            {product.countInStock === 0 && (
+                                <div className="absolute inset-0 bg-white/40 flex items-center justify-center pointer-events-none">
+                                    <span className="bg-white px-8 py-3 text-sm uppercase tracking-[.3em] font-bold shadow-xl">Sold Out</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -107,7 +128,7 @@ const ProductDetail = () => {
                             <h1 className="text-4xl md:text-5xl font-light tracking-tight uppercase leading-tight mb-6">
                                 {product.name}
                             </h1>
-                            <p className="text-2xl font-light tracking-tight">₹{product.price.toLocaleString()}</p>
+                            <p className="text-2xl font-light tracking-tight">{CURRENCY}{product.price.toLocaleString()}</p>
                         </div>
 
                         <div className="mb-12">
@@ -115,37 +136,42 @@ const ProductDetail = () => {
                                 {product.description}
                             </p>
 
-                            <div className="flex justify-between items-center mb-6">
-                                <h4 className="text-[10px] uppercase tracking-widest font-semibold">Select Size</h4>
-                                <button className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-luxury-gold hover:text-luxury-black transition-colors">
-                                    <Ruler size={14} /> Size Guide
-                                </button>
-                            </div>
+                            {product.sizes && product.sizes.length > 0 && (
+                                <>
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h4 className="text-[10px] uppercase tracking-widest font-semibold">Select Size</h4>
+                                        <button className="flex items-center gap-2 text-[10px] uppercase tracking-widest text-luxury-gold hover:text-luxury-black transition-colors">
+                                            <Ruler size={14} /> Size Guide
+                                        </button>
+                                    </div>
 
-                            <div className="flex flex-wrap gap-4 mb-4">
-                                {product.sizes.map(size => (
-                                    <button
-                                        key={size}
-                                        onClick={() => setSelectedSize(size)}
-                                        className={`w-14 h-14 flex items-center justify-center text-xs tracking-widest border transition-all duration-500 ${selectedSize === size
-                                            ? 'border-luxury-black bg-luxury-black text-white'
-                                            : 'border-luxury-gray-light hover:border-luxury-black'
-                                            }`}
-                                    >
-                                        {size}
-                                    </button>
-                                ))}
-                            </div>
+                                    <div className="flex flex-wrap gap-4 mb-4">
+                                        {product.sizes.map(size => (
+                                            <button
+                                                key={size}
+                                                onClick={() => setSelectedSize(size)}
+                                                className={`w-14 h-14 flex items-center justify-center text-xs tracking-widest border transition-all duration-500 ${selectedSize === size
+                                                    ? 'border-luxury-black bg-luxury-black text-white'
+                                                    : 'border-luxury-gray-light hover:border-luxury-black'
+                                                    }`}
+                                            >
+                                                {size}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                             {error && <p className="text-[10px] text-red-500 uppercase tracking-widest mt-2">{error}</p>}
                         </div>
 
                         <div className="flex flex-col gap-4 mb-16">
                             <button
                                 onClick={handleAddToCart}
-                                className="luxury-button w-full flex items-center justify-center gap-4 group"
+                                disabled={product.countInStock === 0}
+                                className="luxury-button w-full flex items-center justify-center gap-4 group disabled:opacity-50"
                             >
-                                Add to Bag
-                                <div className="h-[1px] w-4 bg-white/50 group-hover:w-8 transition-all duration-500" />
+                                {product.countInStock === 0 ? 'Out of Stock' : 'Add to Bag'}
+                                {product.countInStock > 0 && <div className="h-[1px] w-4 bg-white/50 group-hover:w-8 transition-all duration-500" />}
                             </button>
 
                             <div className="flex gap-4">
@@ -197,3 +223,4 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
+

@@ -8,6 +8,7 @@ import {
     Settings,
     LogOut
 } from 'lucide-react';
+import { COMPANY_NAME } from '../../utils/constants';
 
 const AdminSidebar = () => {
     const location = useLocation();
@@ -24,7 +25,7 @@ const AdminSidebar = () => {
         <aside className="w-72 bg-white border-r border-gray-100 flex flex-col fixed inset-y-0">
             <div className="p-10 border-b border-gray-50">
                 <Link to="/" className="group">
-                    <h1 className="text-2xl tracking-[0.3em] font-light">PAHUNN</h1>
+                    <h1 className="text-2xl tracking-[0.3em] font-light">{COMPANY_NAME}</h1>
                     <p className="text-[8px] tracking-[.5em] text-luxury-gold uppercase mt-2 font-bold">Headquarters</p>
                 </Link>
             </div>

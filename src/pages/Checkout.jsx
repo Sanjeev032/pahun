@@ -3,8 +3,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { clearCart } from '../store/slices/cartSlice';
-import { Check, ArrowRight, ShieldCheck, Truck, CreditCard, Lock } from 'lucide-react';
+import { Check, Truck, CreditCard, ShieldCheck } from 'lucide-react';
 import SEO from '../components/common/SEO';
+import { loadRazorpay } from '../utils/loadRazorpay';
+import orderService from '../services/orderService';
+import { COMPANY_NAME } from '../utils/constants';
+import { formatCurrency } from '../utils/formatters';
 
 const Checkout = () => {
     const [step, setStep] = useState(1);
@@ -16,13 +20,88 @@ const Checkout = () => {
     const [shippingData, setShippingData] = useState({
         street: '', city: '', zip: '', phone: ''
     });
+    
+    const [paymentMethod, setPaymentMethod] = useState('razorpay'); // 'razorpay' or 'cod'
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const handleOrder = () => {
-        setStep(4);
-        setTimeout(() => {
-            dispatch(clearCart());
-            navigate('/profile');
-        }, 3000);
+    const handleOrder = async () => {
+        if (paymentMethod === 'cod') {
+            setIsProcessing(true);
+            // Simulate backend call for COD
+            setTimeout(() => {
+                setIsProcessing(false);
+                setStep(4);
+                setTimeout(() => {
+                    dispatch(clearCart());
+                    navigate('/profile');
+                }, 3000);
+            }, 1500);
+        } else {
+            // Razorpay flow
+            await processRazorpayPayment();
+        }
+    };
+
+    const processRazorpayPayment = async () => {
+        setIsProcessing(true);
+        
+        try {
+            // Load razorpay script
+            const res = await loadRazorpay();
+            
+            if (!res) {
+                alert('Razorpay SDK failed to load. Are you online?');
+                setIsProcessing(false);
+                return;
+            }
+
+            // In a real app, you would first create the Main Order document 
+            // via a separate API, capturing `shippingData`, `items`, etc.
+            // For this demo, we assume we have an order ID from the backend.
+            const fakeOrderId = '60d0fe4f5311236168a109ca'; // Mock Mongoose ObjectId
+
+            // 1. Create Razorpay Order on Backend
+            const orderData = await orderService.createRazorpayOrder(fakeOrderId);
+            
+            const options = {
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID, 
+                amount: orderData.amount, 
+                currency: orderData.currency,
+                name: COMPANY_NAME,
+                description: `${COMPANY_NAME} Secure Checkout`,
+                order_id: orderData.id, 
+                handler: async function (response) {
+                    console.log('Payment Success:', response.razorpay_payment_id);
+                    setStep(4);
+                    dispatch(clearCart());
+                    setTimeout(() => {
+                        navigate('/profile');
+                    }, 3000);
+                },
+                prefill: {
+                    name: user?.name,
+                    email: user?.email,
+                    contact: shippingData.phone
+                },
+                theme: {
+                    color: '#000000'
+                }
+            };
+
+            const paymentObject = new window.Razorpay(options);
+            paymentObject.open();
+
+            // Handle failed payments
+            paymentObject.on('payment.failed', function (response){
+                alert(`Payment Failed: ${response.error.description}`);
+            });
+            
+        } catch (error) {
+            console.error('Error in Razorpay Checkout:', error);
+            alert('Something went wrong during checkout.');
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const steps = [
@@ -33,7 +112,7 @@ const Checkout = () => {
 
     return (
         <div className="min-h-screen pt-32 pb-24 bg-white">
-            <SEO title="Checkout" description="Secure your Pahunn masterpiece. 3-step secure checkout process." />
+            <SEO title="Checkout" description={`Secure your ${COMPANY_NAME} masterpiece. 3-step secure checkout process.`} />
             <div className="container-custom max-w-5xl">
                 {/* Progress Bar */}
                 <div className="mb-20">
@@ -92,31 +171,38 @@ const Checkout = () => {
                                     className="space-y-12"
                                 >
                                     <h2 className="text-2xl font-light uppercase tracking-extra">Secure Payment</h2>
-                                    <div className="space-y-8 p-10 bg-luxury-ivory/50 border border-luxury-gray-light rounded-sm">
-                                        <div className="flex items-center gap-4 py-4 border-b border-luxury-gray-light text-[10px] uppercase tracking-widest font-bold">
-                                            <div className="w-4 h-4 rounded-full border-2 border-luxury-gold" />
-                                            Credit / Debit Card (Stripe Secure)
-                                        </div>
-                                        <div className="flex gap-2 mb-4">
-                                            <div className="h-6 w-10 bg-gray-100 rounded flex items-center justify-center text-[8px] font-bold">VISA</div>
-                                            <div className="h-6 w-10 bg-gray-100 rounded flex items-center justify-center text-[8px] font-bold">MC</div>
-                                            <div className="h-6 w-10 bg-gray-100 rounded flex items-center justify-center text-[8px] font-bold">AMEX</div>
-                                        </div>
-                                        <div className="space-y-6 pt-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] uppercase tracking-widest text-luxury-gray-medium">Card Number</label>
-                                                <input placeholder="XXXX XXXX XXXX XXXX" className="w-full bg-transparent border-b border-luxury-gray-light py-2 text-xs tracking-widest focus:outline-none font-mono" />
-                                            </div>
-                                            <div className="grid grid-cols-2 gap-8">
-                                                <div className="space-y-2">
-                                                    <label className="text-[9px] uppercase tracking-widest text-luxury-gray-medium">Expiry</label>
-                                                    <input placeholder="MM / YY" className="w-full bg-transparent border-b border-luxury-gray-light py-2 text-xs tracking-widest focus:outline-none font-mono" />
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div 
+                                            onClick={() => setPaymentMethod('razorpay')}
+                                            className={`p-6 border cursor-pointer transition-colors ${paymentMethod === 'razorpay' ? 'border-luxury-gold bg-luxury-gold/5' : 'border-luxury-gray-light bg-luxury-ivory/50 hover:bg-luxury-ivory'}`}
+                                        >
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'razorpay' ? 'border-luxury-gold' : 'border-luxury-gray-light'}`}>
+                                                        {paymentMethod === 'razorpay' && <div className="w-2 h-2 rounded-full bg-luxury-gold" />}
+                                                    </div>
+                                                    <span className="text-xs uppercase tracking-widest font-bold">Razorpay</span>
                                                 </div>
-                                                <div className="space-y-2">
-                                                    <label className="text-[9px] uppercase tracking-widest text-luxury-gray-medium">CVV</label>
-                                                    <input placeholder="***" className="w-full bg-transparent border-b border-luxury-gray-light py-2 text-xs tracking-widest focus:outline-none font-mono" />
-                                                </div>
+                                                <CreditCard size={18} className="text-luxury-gray-medium" />
                                             </div>
+                                            <p className="text-[10px] text-luxury-gray-medium mt-2 leading-relaxed">UPI, Credit/Debit Cards, Net Banking, and Wallets.</p>
+                                        </div>
+
+                                        <div 
+                                            onClick={() => setPaymentMethod('cod')}
+                                            className={`p-6 border cursor-pointer transition-colors ${paymentMethod === 'cod' ? 'border-luxury-gold bg-luxury-gold/5' : 'border-luxury-gray-light bg-luxury-ivory/50 hover:bg-luxury-ivory'}`}
+                                        >
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === 'cod' ? 'border-luxury-gold' : 'border-luxury-gray-light'}`}>
+                                                        {paymentMethod === 'cod' && <div className="w-2 h-2 rounded-full bg-luxury-gold" />}
+                                                    </div>
+                                                    <span className="text-xs uppercase tracking-widest font-bold">Cash on Delivery</span>
+                                                </div>
+                                                <Truck size={18} className="text-luxury-gray-medium" />
+                                            </div>
+                                            <p className="text-[10px] text-luxury-gray-medium mt-2 leading-relaxed">Pay with cash upon delivery.</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-4">
@@ -142,17 +228,27 @@ const Checkout = () => {
                                         {items.slice(0, 2).map(item => (
                                             <div key={item.id} className="flex justify-between items-center text-xs uppercase tracking-widest">
                                                 <span>{item.name} (x{item.quantity})</span>
-                                                <span className="font-bold">₹{item.totalPrice.toLocaleString()}</span>
+                                                <span className="font-bold">{formatCurrency(item.totalPrice)}</span>
                                             </div>
                                         ))}
                                         {items.length > 2 && <p className="text-[10px] text-luxury-gray-medium uppercase tracking-widest italic">+ {items.length - 2} more items</p>}
                                     </div>
                                     <div className="p-10 border-t border-luxury-black">
+                                        <div className="flex justify-between items-baseline mb-4">
+                                            <span className="text-sm uppercase tracking-extra font-bold">Payment Method</span>
+                                            <span className="text-sm font-light uppercase">{paymentMethod === 'razorpay' ? 'Razorpay Secure' : 'Cash on Delivery'}</span>
+                                        </div>
                                         <div className="flex justify-between items-baseline mb-12">
                                             <span className="text-sm uppercase tracking-extra font-bold">Total Amount Due</span>
-                                            <span className="text-3xl font-light">₹{totalAmount.toLocaleString()}</span>
+                                            <span className="text-3xl font-light">{formatCurrency(totalAmount)}</span>
                                         </div>
-                                        <button onClick={handleOrder} className="luxury-button w-full shadow-xl shadow-luxury-black/10">Complete Purchase</button>
+                                        <button 
+                                            onClick={handleOrder} 
+                                            disabled={isProcessing}
+                                            className="luxury-button w-full shadow-xl shadow-luxury-black/10 disabled:opacity-50"
+                                        >
+                                            {isProcessing ? 'Processing...' : (paymentMethod === 'razorpay' ? 'Pay Securely via Razorpay' : 'Place Order via COD')}
+                                        </button>
                                     </div>
                                 </motion.div>
                             )}
@@ -194,3 +290,4 @@ const Checkout = () => {
 };
 
 export default Checkout;
+

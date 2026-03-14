@@ -3,6 +3,7 @@ import { ShoppingBag, Search, Menu, X, Heart, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import { COMPANY_NAME, NAV_LINKS } from '../utils/constants';
 
 const Navbar = () => {
     const [isScrolled, setIsScrolled] = useState(false);
@@ -25,13 +26,6 @@ const Navbar = () => {
         setIsMobileMenuOpen(false);
     }, [location]);
 
-    const navLinks = [
-        { name: 'New Arrivals', href: '/shop?category=new' },
-        { name: 'Collections', href: '/shop?category=collections' },
-        { name: 'Men', href: '/shop?category=men' },
-        { name: 'Women', href: '/shop?category=women' },
-        { name: 'Editorial', href: '/editorial' },
-    ];
 
     const isHome = location.pathname === '/';
 
@@ -41,7 +35,7 @@ const Navbar = () => {
             <div className="container-custom flex items-center justify-between">
                 {/* Left: Desktop Nav */}
                 <ul className="hidden lg:flex items-center gap-8 text-[10px] font-semibold uppercase tracking-widest">
-                    {navLinks.slice(0, 3).map((link) => (
+                    {NAV_LINKS.slice(0, 3).map((link) => (
                         <li key={link.name}>
                             <Link to={link.href} className="hover:text-luxury-gold transition-colors duration-300">
                                 {link.name}
@@ -62,15 +56,16 @@ const Navbar = () => {
                 <Link to="/" className="absolute left-1/2 -translate-x-1/2 group">
                     <h1 className={`text-2xl md:text-3xl tracking-extra font-light transition-all duration-700 ${isScrolled ? 'scale-90' : 'scale-100'
                         }`}>
-                        PAHUNN
+                        {COMPANY_NAME}
                     </h1>
                     <div className="h-[1px] w-0 group-hover:w-full bg-luxury-gold transition-all duration-700 mx-auto mt-1" />
                 </Link>
 
+
                 {/* Right: Actions */}
                 <div className="flex items-center gap-1 md:gap-4">
                     <ul className="hidden lg:flex items-center gap-8 text-[10px] font-semibold uppercase tracking-widest mr-4">
-                        {navLinks.slice(3).map((link) => (
+                        {NAV_LINKS.slice(3).map((link) => (
                             <li key={link.name}>
                                 <Link to={link.href} className="hover:text-luxury-gold transition-colors duration-300">
                                     {link.name}
@@ -124,7 +119,7 @@ const Navbar = () => {
                         </button>
 
                         <ul className="flex flex-col items-center gap-10">
-                            {navLinks.map((link, idx) => (
+                            {NAV_LINKS.map((link, idx) => (
                                 <motion.li
                                     key={link.name}
                                     initial={{ opacity: 0, y: 20 }}

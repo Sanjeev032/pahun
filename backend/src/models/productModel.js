@@ -36,9 +36,9 @@ const productSchema = mongoose.Schema(
             required: true,
         },
         category: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: String,
             required: true,
-            ref: 'Category',
+            enum: ['men', 'women', 'tailoring', 'accessories'],
         },
         sku: {
             type: String,

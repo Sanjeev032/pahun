@@ -1,37 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { products } from '../api/products';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Filter, ChevronDown } from 'lucide-react';
-import { useDispatch } from 'react-redux';
 import SEO from '../components/common/SEO';
 import { CardSkeleton } from '../components/common/Skeletons';
 import ProductCard from '../components/common/ProductCard';
+import productService from '../services/productService';
+import { COMPANY_NAME, PRODUCT_CATEGORIES } from '../utils/constants';
 
 const Shop = () => {
-    const [activeCategory, setActiveCategory] = useState('All');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const queryCategory = searchParams.get('category') || 'All';
+    
+    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState(PRODUCT_CATEGORIES);
     const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    // Simulate loading for smooth transition
-    React.useEffect(() => {
-        const timer = setTimeout(() => setIsLoading(false), 800);
-        return () => clearTimeout(timer);
-    }, []);
-    const dispatch = useDispatch();
+    useEffect(() => {
+        const fetchProducts = async () => {
+            setIsLoading(true);
+            try {
+                // Fetch products based on category
+                const params = queryCategory !== 'All' 
+                    ? { category: queryCategory.toLowerCase() } 
+                    : {};
+                const data = await productService.getProducts(params);
+                setProducts(data.products || []);
+                
+                setError(null);
+            } catch (err) {
+                setError('Failed to load collections. Please try again later.');
+                console.error(err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
-    const categories = ['All', 'Couture', 'Tailoring', 'Accessories'];
+        fetchProducts();
+    }, [queryCategory]);
 
-    const filteredProducts = activeCategory === 'All'
-        ? products
-        : products.filter(p => p.category === activeCategory);
-
+    const handleCategoryChange = (cat) => {
+        if (cat === 'All') {
+            searchParams.delete('category');
+        } else {
+            searchParams.set('category', cat); // Keep Uppercase in URL for aesthetics, but lowercase for API
+        }
+        setSearchParams(searchParams);
+    };
 
     return (
         <div className="bg-white min-h-screen pt-32 pb-24">
             <SEO
-                title="The Collections"
-                description="Explore Pahunn's curated collections of couture, tailoring, and artisanal accessories. Modern luxury redefined."
+                title={`The Collections | ${COMPANY_NAME}`}
+                description={`Explore ${COMPANY_NAME}'s curated collections of couture, tailoring, and artisanal accessories. Modern luxury redefined.`}
             />
             <div className="container-custom">
                 {/* Header */}
@@ -49,12 +72,12 @@ const Shop = () => {
                             {categories.map(cat => (
                                 <button
                                     key={cat}
-                                    onClick={() => setActiveCategory(cat)}
-                                    className={`transition-all duration-500 hover:text-luxury-black relative py-2 ${activeCategory === cat ? 'text-luxury-black' : ''
+                                    onClick={() => handleCategoryChange(cat)}
+                                    className={`transition-all duration-500 hover:text-luxury-black relative py-2 ${queryCategory === cat ? 'text-luxury-black' : ''
                                         }`}
                                 >
                                     {cat}
-                                    {activeCategory === cat && (
+                                    {queryCategory === cat && (
                                         <motion.div
                                             layoutId="cat-underline"
                                             className="absolute bottom-0 left-0 w-full h-[1px] bg-luxury-gold"
@@ -79,15 +102,27 @@ const Shop = () => {
                     </div>
                 </header>
 
+                {error && (
+                    <div className="text-center py-20">
+                        <p className="text-red-500 uppercase tracking-widest text-xs">{error}</p>
+                    </div>
+                )}
+
                 {/* Product Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-8 gap-y-16">
                     {isLoading ? (
                         [1, 2, 3, 4, 5, 6, 7, 8].map(n => <CardSkeleton key={n} />)
                     ) : (
                         <AnimatePresence mode="popLayout">
-                            {filteredProducts.map((product) => (
-                                <ProductCard key={product.id} product={product} />
-                            ))}
+                            {products.length > 0 ? (
+                                products.map((product) => (
+                                    <ProductCard key={product._id} product={product} />
+                                ))
+                            ) : (
+                                <div className="col-span-full text-center py-20">
+                                    <p className="text-luxury-gray-medium uppercase tracking-[.3em] text-[10px]">No pieces found in this collection.</p>
+                                </div>
+                            )}
                         </AnimatePresence>
                     )}
                 </div>
@@ -97,3 +132,4 @@ const Shop = () => {
 };
 
 export default Shop;
+

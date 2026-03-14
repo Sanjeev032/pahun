@@ -6,6 +6,7 @@ import { Heart, ShoppingBag, Trash2 } from 'lucide-react';
 import { toggleWishlist } from '../store/slices/wishlistSlice';
 import { addItemToCart } from '../store/slices/cartSlice';
 import LuxuryImage from '../components/common/LuxuryImage';
+import { formatCurrency } from '../utils/formatters';
 
 const Wishlist = () => {
     const items = useSelector((state) => state.wishlist.items);
@@ -39,13 +40,13 @@ const Wishlist = () => {
                         {items.map((product) => (
                             <motion.div
                                 layout
-                                key={product.id}
+                                key={product._id || product.id}
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
                                 className="group relative"
                             >
-                                <Link to={`/product/${product.id}`}>
+                                <Link to={`/product/${product._id || product.id}`}>
                                     <div className="aspect-[3/4] overflow-hidden bg-luxury-ivory mb-6 relative">
                                         <LuxuryImage src={product.image} alt={product.name} className="w-full h-full transition-transform duration-[2s] group-hover:scale-110" />
                                     </div>
@@ -56,13 +57,13 @@ const Wishlist = () => {
                                         <p className="text-[9px] uppercase tracking-widest text-luxury-gray-medium mb-2">{product.category}</p>
                                         <h4 className="text-sm font-light tracking-wide uppercase group-hover:text-luxury-gold transition-colors">{product.name}</h4>
                                     </div>
-                                    <p className="text-sm font-medium">₹{product.price.toLocaleString()}</p>
+                                    <p className="text-sm font-medium">{formatCurrency(product.price)}</p>
                                 </div>
 
                                 <div className="flex gap-4">
                                     <button
                                         onClick={() => {
-                                            dispatch(addItemToCart({ ...product, size: product.sizes[0] }));
+                                            dispatch(addItemToCart({ ...product, size: product.sizes?.[0] || 'M' }));
                                             dispatch(toggleWishlist(product));
                                         }}
                                         className="flex-1 border border-luxury-black py-4 text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-luxury-black hover:text-white transition-all duration-500"
@@ -86,3 +87,4 @@ const Wishlist = () => {
 };
 
 export default Wishlist;
+

@@ -5,10 +5,15 @@ import { Link } from 'react-router-dom';
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from 'lucide-react';
 import { addItemToCart, removeItemFromCart } from '../store/slices/cartSlice';
 import LuxuryImage from '../components/common/LuxuryImage';
+import { formatCurrency } from '../utils/formatters';
+import { SHIPPING_CHARGES, FREE_SHIPPING_THRESHOLD } from '../utils/constants';
 
 const Cart = () => {
     const { items, totalAmount } = useSelector((state) => state.cart);
     const dispatch = useDispatch();
+
+    const shippingPrice = totalAmount > FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_CHARGES;
+    const finalTotal = totalAmount + shippingPrice;
 
     if (items.length === 0) {
         return (
@@ -39,7 +44,7 @@ const Cart = () => {
                             {items.map((item) => (
                                 <motion.div
                                     layout
-                                    key={`${item.id}-${item.size}`}
+                                    key={`${item._id || item.id}-${item.size}`}
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
@@ -52,7 +57,7 @@ const Cart = () => {
                                     <div className="flex-1 flex flex-col pt-2">
                                         <div className="flex justify-between items-start mb-2">
                                             <h3 className="text-lg font-light tracking-wide uppercase">{item.name}</h3>
-                                            <p className="text-sm font-medium tracking-tight">₹{(item.price * item.quantity).toLocaleString()}</p>
+                                            <p className="text-sm font-medium tracking-tight">{formatCurrency(item.price * item.quantity)}</p>
                                         </div>
 
                                         <p className="text-[10px] uppercase tracking-widest text-luxury-gray-medium mb-8">
@@ -62,7 +67,7 @@ const Cart = () => {
                                         <div className="mt-auto flex items-center justify-between">
                                             <div className="flex items-center border border-luxury-gray-light">
                                                 <button
-                                                    onClick={() => dispatch(removeItemFromCart({ id: item.id, size: item.size }))}
+                                                    onClick={() => dispatch(removeItemFromCart({ id: item._id || item.id, size: item.size }))}
                                                     className="p-3 hover:text-luxury-gold transition-colors"
                                                 >
                                                     <Minus size={14} />
@@ -77,7 +82,7 @@ const Cart = () => {
                                             </div>
 
                                             <button
-                                                onClick={() => dispatch(removeItemFromCart({ id: item.id, size: item.size, force: true }))}
+                                                onClick={() => dispatch(removeItemFromCart({ id: item._id || item.id, size: item.size, force: true }))}
                                                 className="text-[10px] uppercase tracking-widest text-red-400 hover:text-red-700 transition-colors flex items-center gap-2"
                                             >
                                                 <Trash2 size={14} /> Remove
@@ -97,11 +102,15 @@ const Cart = () => {
                             <div className="space-y-6 mb-10">
                                 <div className="flex justify-between text-xs tracking-widest uppercase">
                                     <span className="text-luxury-gray-medium">Subtotal</span>
-                                    <span>₹{totalAmount.toLocaleString()}</span>
+                                    <span>{formatCurrency(totalAmount)}</span>
                                 </div>
                                 <div className="flex justify-between text-xs tracking-widest uppercase">
                                     <span className="text-luxury-gray-medium">Shipping</span>
-                                    <span className="text-luxury-gold">Complimentary</span>
+                                    {shippingPrice === 0 ? (
+                                        <span className="text-luxury-gold">Complimentary</span>
+                                    ) : (
+                                        <span>{formatCurrency(shippingPrice)}</span>
+                                    )}
                                 </div>
                                 <div className="flex justify-between text-xs tracking-widest uppercase">
                                     <span className="text-luxury-gray-medium">Tax</span>
@@ -111,7 +120,7 @@ const Cart = () => {
 
                             <div className="pt-10 border-t border-luxury-black mb-12 flex justify-between items-baseline">
                                 <span className="text-[11px] uppercase tracking-extra font-bold text-luxury-black">Estimated Total</span>
-                                <span className="text-2xl font-light tracking-tight">₹{totalAmount.toLocaleString()}</span>
+                                <span className="text-2xl font-light tracking-tight">{formatCurrency(finalTotal)}</span>
                             </div>
 
                             <Link to="/checkout" className="luxury-button w-full flex items-center justify-center gap-4 group">
@@ -131,3 +140,4 @@ const Cart = () => {
 };
 
 export default Cart;
+

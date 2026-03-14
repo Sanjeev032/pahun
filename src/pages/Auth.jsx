@@ -3,25 +3,57 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '../store/slices/authSlice';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, Loader2 } from 'lucide-react';
+import authService from '../services/authService';
+import { COMPANY_NAME } from '../utils/constants';
 
 const Auth = ({ type }) => {
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({ email: '', password: '', name: '' });
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+    
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        // Simulate login
-        dispatch(setCredentials({
-            user: { name: formData.name || 'Arjun Singh', email: formData.email },
-            token: 'mock-jwt-token'
-        }));
-        navigate('/profile');
-    };
-
     const isLogin = type === 'login';
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        setError('');
+        
+        try {
+            let data;
+            if (isLogin) {
+                data = await authService.login({
+                    email: formData.email,
+                    password: formData.password
+                });
+            } else {
+                data = await authService.register({
+                    name: formData.name,
+                    email: formData.email,
+                    password: formData.password
+                });
+            }
+            
+            if (data.success) {
+                dispatch(setCredentials({
+                    user: data.data.user,
+                    token: data.data.token
+                }));
+                navigate('/profile');
+            } else {
+                setError(data.message || 'Authentication failed');
+            }
+        } catch (err) {
+            setError(err.response?.data?.message || 'An error occurred during authentication');
+            console.error('Auth error:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen pt-32 pb-24 flex items-center justify-center bg-luxury-ivory/30 px-6">
@@ -35,9 +67,15 @@ const Auth = ({ type }) => {
                         {isLogin ? 'Sign In' : 'Create Account'}
                     </h2>
                     <p className="text-[10px] uppercase tracking-widest text-luxury-gray-medium">
-                        Access your curated world of Pahunn
+                        Access your curated world of {COMPANY_NAME.toLowerCase()}
                     </p>
                 </div>
+
+                {error && (
+                    <div className="mb-8 p-4 bg-red-50 text-red-500 text-[10px] uppercase tracking-widest text-center border border-red-100">
+                        {error}
+                    </div>
+                )}
 
                 <form onSubmit={handleSubmit} className="space-y-8">
                     {!isLogin && (
@@ -82,10 +120,31 @@ const Auth = ({ type }) => {
                         </button>
                     </div>
 
+                    {isLogin && (
+                        <div className="flex justify-end">
+                            <Link 
+                                to="/forgot-password" 
+                                className="text-[10px] text-luxury-gray-medium hover:text-luxury-gold transition-colors tracking-widest uppercase"
+                            >
+                                Forgot Password?
+                            </Link>
+                        </div>
+                    )}
+
                     <div className="pt-6">
-                        <button type="submit" className="luxury-button w-full flex items-center justify-center gap-4 group">
-                            {isLogin ? 'Enter Atelier' : 'Join the House'}
-                            <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform duration-500" />
+                        <button 
+                            type="submit" 
+                            disabled={isLoading}
+                            className="luxury-button w-full flex items-center justify-center gap-4 group disabled:opacity-70"
+                        >
+                            {isLoading ? (
+                                <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                                <>
+                                    {isLogin ? 'Enter Atelier' : 'Join the House'}
+                                    <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform duration-500" />
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>
@@ -107,3 +166,4 @@ const Auth = ({ type }) => {
 };
 
 export default Auth;
+
