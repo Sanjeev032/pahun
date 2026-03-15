@@ -42,10 +42,12 @@ const protect = async (req, res, next) => {
 
 // Admin middleware
 const adminOnly = (req, res, next) => {
-    if (req.user && req.user.role === 'admin') {
+    const adminEmail = process.env.ADMIN_EMAIL || 'sanjeev29039@gmail.com';
+    
+    if (req.user && req.user.email === adminEmail) {
         next();
     } else {
-        res.status(403); // Forbidden is better than 401 for role issues
+        res.status(403);
         throw new Error('Not authorized as an admin');
     }
 };

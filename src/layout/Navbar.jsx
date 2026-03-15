@@ -3,12 +3,12 @@ import { ShoppingBag, Search, Menu, X, Heart, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { NAV_LINKS } from '../utils/constants';
+import { NAV_LINKS, ADMIN_EMAIL } from '../utils/constants';
 import { SignedIn, SignedOut, UserButton, useUser } from '@clerk/clerk-react';
 import logo from '../assets/logo.jpeg';
 
 const Navbar = () => {
-    const { isLoaded: isAuthLoaded } = useUser();
+    const { isLoaded: isAuthLoaded, user: clerkUser } = useUser();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const location = useLocation();
@@ -16,7 +16,9 @@ const Navbar = () => {
     const cartQuantity = useSelector((state) => state.cart.totalQuantity);
     const wishlistCount = useSelector((state) => state.wishlist.items.length);
     const { user: mongoUser } = useSelector((state) => state.auth);
-    const isAdmin = mongoUser?.role === 'admin';
+    
+    const userEmail = clerkUser?.primaryEmailAddress?.emailAddress || mongoUser?.email;
+    const isAdmin = userEmail === ADMIN_EMAIL;
 
     useEffect(() => {
         setIsMobileMenuOpen(false);

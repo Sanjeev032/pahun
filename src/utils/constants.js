@@ -5,6 +5,7 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const COMPANY_NAME = 'PAHUNN';
+export const ADMIN_EMAIL = 'sanjeev29039@gmail.com';
 
 export const PAGINATION_LIMIT = 10;
 

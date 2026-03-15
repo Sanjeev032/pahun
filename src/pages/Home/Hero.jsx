@@ -24,28 +24,28 @@ const Hero = () => {
             </motion.div>
 
             <div className="container-custom h-full flex items-center relative z-10">
-                <div className="max-w-4xl pt-20">
+                <div className="max-w-4xl pt-32">
                     <motion.div
-                        initial={{ opacity: 0, y: 30 }}
+                        initial={{ opacity: 0, y: 40 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ delay: 0.5, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <span className="text-[10px] md:text-xs uppercase tracking-[0.4em] text-white/80 mb-6 block font-medium">
+                        <span className="text-[10px] md:text-xs uppercase tracking-[0.5em] text-white/90 mb-8 block font-semibold">
                             The Winter Atelier / Series II
                         </span>
-                        <h2 className="text-6xl md:text-8xl lg:text-[160px] leading-[0.8] mb-10 font-light tracking-tighter text-white">
+                        <h2 className="text-6xl md:text-8xl lg:text-[140px] xl:text-[180px] leading-[0.8] mb-12 font-light tracking-tighter text-white">
                             POETRY <br />
-                            <span className="serif italic md:ml-24 text-luxury-gold drop-shadow-sm">_IN_SILK</span>
+                            <span className="serif italic md:ml-32 text-luxury-gold drop-shadow-2xl">_IN_SILK</span>
                         </h2>
                     </motion.div>
 
                     <motion.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ delay: 1.2, duration: 1 }}
-                        className="text-white/70 max-w-md text-sm md:text-lg font-light leading-relaxed mb-12 tracking-wide"
+                        transition={{ delay: 1.2, duration: 1.5 }}
+                        className="text-white/70 max-w-lg text-sm md:text-xl font-light leading-relaxed mb-16 tracking-wide drop-shadow-md"
                     >
-                        Discover timeless craftsmanship and the tactile beauty of hand-spun silhouettes.
+                        Discover timeless craftsmanship and the tactile beauty of hand-spun silhouettes, meticulously crafted for the modern visionary.
                     </motion.p>
 
                     <motion.div

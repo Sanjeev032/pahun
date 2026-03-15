@@ -1,10 +1,10 @@
 import React from 'react';
 
 const CardSkeleton = () => (
-    <div className="bg-white border border-gray-100 p-4 animate-pulse">
-        <div className="bg-gray-200 h-64 w-full mb-4" />
-        <div className="h-4 bg-gray-200 w-3/4 mb-2" />
-        <div className="h-3 bg-gray-200 w-1/2" />
+    <div className="bg-white p-2 animate-pulse">
+        <div className="bg-gray-100 aspect-[3/4] w-full mb-6" />
+        <div className="h-4 bg-gray-100 w-3/4 mb-4" />
+        <div className="h-4 bg-gray-100 w-1/4" />
     </div>
 );
 

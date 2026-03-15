@@ -18,6 +18,12 @@ const syncUser = async (req, res, next) => {
         let isNew = false;
 
         if (user) {
+            // Migration check: if user has isAdmin true but role is default 'user', promote to admin
+            // (Mongoose might still have isAdmin in the raw doc if strict is not enforced or if we use raw access)
+            if (user._doc && user._doc.isAdmin && user.role === 'user') {
+                user.role = 'admin';
+            }
+            
             // Update existing Clerk user
             user.name = name || user.name;
             user.email = email || user.email;
