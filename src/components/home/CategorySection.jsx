@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import ProductCard from '../common/ProductCard';
 import productService from '../../services/productService';
+import ProductSkeleton from '../loaders/ProductSkeleton';
 
 const CategorySection = ({ title, category }) => {
     const [products, setProducts] = useState([]);
@@ -19,7 +20,6 @@ const CategorySection = ({ title, category }) => {
                 setProducts(fetchedProducts);
             } catch (err) {
                 console.error(`Failed to fetch ${category} products:`, err);
-                // Extract message if it's an error object, or use as is if it's a string
                 const errorMsg = err.message || (typeof err === 'string' ? err : 'Unknown Error');
                 setError(`Failed to load ${category} collection: ${errorMsg}`);
             } finally {
@@ -49,8 +49,10 @@ const CategorySection = ({ title, category }) => {
                 </div>
 
                 {isLoading ? (
-                    <div className="flex justify-center items-center min-h-[400px]">
-                        <Loader2 className="animate-spin text-luxury-gold" size={32} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-16">
+                        {[...Array(4)].map((_, i) => (
+                            <ProductSkeleton key={i} />
+                        ))}
                     </div>
                 ) : error ? (
                     <div className="text-center py-20">

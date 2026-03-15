@@ -37,11 +37,10 @@ export const SOCIAL_LINKS = {
 };
 
 export const NAV_LINKS = [
-    { name: 'New Arrivals', href: '/shop?category=all' },
     { name: 'Men', href: '/shop?category=men' },
     { name: 'Women', href: '/shop?category=women' },
-    { name: 'Atelier', href: '/atelier' },
-    { name: 'Editorial', href: '/editorial' },
+    { name: 'Accessories', href: '/shop?category=accessories' },
+    { name: 'Tailoring', href: '/shop?category=tailoring' },
 ];
 
 export const FOOTER_LINKS = {

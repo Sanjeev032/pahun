@@ -1,4 +1,4 @@
-import jwt from 'jsonwebtoken';
+import { verifyToken } from '@clerk/clerk-sdk-node';
 import User from '../models/userModel.js';
 
 // Protect routes
@@ -12,13 +12,23 @@ const protect = async (req, res, next) => {
         try {
             token = req.headers.authorization.split(' ')[1];
 
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            // Verify the session token using Clerk
+            const decoded = await verifyToken(token, {
+                secretKey: process.env.CLERK_SECRET_KEY,
+            });
 
-            req.user = await User.findById(decoded.id).select('-password');
+            // Find user in our DB by clerkId
+            const user = await User.findOne({ clerkId: decoded.sub });
 
+            if (!user) {
+                res.status(401);
+                throw new Error('User not found in database');
+            }
+
+            req.user = user;
             next();
         } catch (error) {
-            console.error(error);
+            console.error('Auth Error:', error.message);
             res.status(401);
             throw new Error('Not authorized, token failed');
         }
@@ -31,13 +41,13 @@ const protect = async (req, res, next) => {
 };
 
 // Admin middleware
-const admin = (req, res, next) => {
-    if (req.user && req.user.isAdmin) {
+const adminOnly = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') {
         next();
     } else {
-        res.status(401);
+        res.status(403); // Forbidden is better than 401 for role issues
         throw new Error('Not authorized as an admin');
     }
 };
 
-export { protect, admin };
+export { protect, adminOnly as admin };

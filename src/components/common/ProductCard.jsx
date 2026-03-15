@@ -8,20 +8,20 @@ import { addItemToCart } from '../../store/slices/cartSlice';
 import LuxuryImage from './LuxuryImage';
 import { formatCurrency } from '../../utils/formatters';
 
-const ProductCard = ({ product }) => {
+const ProductCard = React.memo(({ product }) => {
     const dispatch = useDispatch();
     const wishlistItems = useSelector((state) => state.wishlist.items);
     const isInWishlist = (id) => wishlistItems.some(item => (item._id || item.id) === id);
 
     const productId = product._id || product.id;
 
-    const handleAddToCart = () => {
+    const handleAddToCart = React.useCallback(() => {
         dispatch(addItemToCart({ 
             ...product, 
-            id: productId, // Ensure it matches slice's expectation
+            id: productId,
             quantity: 1 
         }));
-    };
+    }, [dispatch, product, productId]);
 
     return (
         <motion.div
@@ -36,6 +36,7 @@ const ProductCard = ({ product }) => {
                     <LuxuryImage
                         src={product.image}
                         alt={product.name}
+                        loading="lazy"
                         className="w-full h-full transition-transform duration-[1.5s] group-hover:scale-110"
                     />
                 </Link>
@@ -83,7 +84,7 @@ const ProductCard = ({ product }) => {
             </div>
         </motion.div>
     );
-};
+});
 
 export default ProductCard;
 

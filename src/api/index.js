@@ -1,22 +1,19 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'http://localhost:5001/api',
+    baseURL: 'http://localhost:5000/api',
 });
 
-// Add a request interceptor to attach JWT
+// Add a request interceptor to attach Clerk Token (if provided)
 API.interceptors.request.use((config) => {
-    const token = localStorage.getItem('pahunn_token');
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-    }
+    // Note: In Clerk, we should ideally pass the token to this instance
+    // For now, we'll assume the token is passed in headers or handled by the caller
     return config;
 });
 
 export const authAPI = {
-    login: (credentials) => API.post('/users/login', credentials),
-    register: (data) => API.post('/users', data),
-    getProfile: () => API.get('/users/profile'),
+    sync: (userData, config) => API.post('/users/sync', userData, config),
+    getProfile: (config) => API.get('/users/profile', config),
 };
 
 export const productAPI = {

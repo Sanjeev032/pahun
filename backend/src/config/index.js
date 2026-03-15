@@ -8,8 +8,7 @@ const config = {
     env: process.env.NODE_ENV || 'development',
     port: process.env.PORT || 5000,
     mongoUri: process.env.MONGO_URI,
-    jwtSecret: process.env.JWT_SECRET,
-    jwtExpiresIn: process.env.JWT_EXPIRE || '30d',
+    clerkSecretKey: process.env.CLERK_SECRET_KEY,
     
     // Payment Gateway (Razorpay)
     razorpay: {
@@ -37,7 +36,7 @@ const config = {
 };
 
 // Validate critical config
-const requiredKeys = ['MONGO_URI', 'JWT_SECRET'];
+const requiredKeys = ['MONGO_URI', 'CLERK_SECRET_KEY'];
 requiredKeys.forEach((key) => {
     if (!process.env[key]) {
         console.warn(`WARNING: Missing critical environment variable: ${key}`);

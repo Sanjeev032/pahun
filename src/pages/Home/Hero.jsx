@@ -5,70 +5,73 @@ import LuxuryImage from '../../components/common/LuxuryImage';
 
 const Hero = () => {
     return (
-        <section className="relative h-screen w-full overflow-hidden bg-luxury-ivory">
-            {/* Background with Zoom Effect */}
+        <section className="relative h-[90vh] md:h-screen w-full overflow-hidden">
+            {/* Cinematic Background */}
             <motion.div
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 4, ease: "easeOut" }}
+                initial={{ scale: 1.15, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 2.5, ease: [0.16, 1, 0.3, 1] }}
                 className="absolute inset-0"
             >
                 <LuxuryImage
                     src="https://images.unsplash.com/photo-1490481651871-ab68ec25d43d?q=80&w=2070&auto=format&fit=crop"
-                    className="w-full h-full"
-                    alt="Hero Collection"
+                    className="w-full h-full object-cover"
+                    alt="Pahun Couture"
+                    priority="true"
                 />
-                <div className="absolute inset-0 bg-black/20" />
+                {/* Gradient Overlay for depth */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/20" />
             </motion.div>
 
-            <div className="container-custom h-full flex flex-col justify-center relative z-10">
-                <div className="max-w-3xl">
-                    <motion.p
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5, duration: 1 }}
-                        className="text-[10px] md:text-xs uppercase tracking-extra mb-8 font-semibold text-white/90"
-                    >
-                        Haute Couture / Winter 2026
-                    </motion.p>
-
+            <div className="container-custom h-full flex items-center relative z-10">
+                <div className="max-w-4xl pt-20">
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.8, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                        transition={{ delay: 0.5, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
                     >
-                        <h2 className="text-6xl md:text-8xl lg:text-[140px] leading-[0.85] mb-12 font-light tracking-tighter text-white">
-                            POETRY<br />
-                            <span className="italic serif ml-12 md:ml-32 text-luxury-gold">_IN_SILK</span>
+                        <span className="text-[10px] md:text-xs uppercase tracking-[0.4em] text-white/80 mb-6 block font-medium">
+                            The Winter Atelier / Series II
+                        </span>
+                        <h2 className="text-6xl md:text-8xl lg:text-[160px] leading-[0.8] mb-10 font-light tracking-tighter text-white">
+                            POETRY <br />
+                            <span className="serif italic md:ml-24 text-luxury-gold drop-shadow-sm">_IN_SILK</span>
                         </h2>
                     </motion.div>
 
-                    <motion.div
+                    <motion.p
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
+                        transition={{ delay: 1.2, duration: 1 }}
+                        className="text-white/70 max-w-md text-sm md:text-lg font-light leading-relaxed mb-12 tracking-wide"
+                    >
+                        Discover timeless craftsmanship and the tactile beauty of hand-spun silhouettes.
+                    </motion.p>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 1.5, duration: 1 }}
                         className="flex flex-col sm:flex-row gap-6"
                     >
-                        <Link to="/shop" className="luxury-button bg-white text-luxury-black border-white hover:bg-transparent hover:text-white">
-                            The Collection
+                        <Link to="/shop" className="luxury-button bg-white text-luxury-black border-white hover:bg-transparent hover:text-white px-12 py-5 text-xs">
+                            Shop Collection
                         </Link>
-                        <Link to="/atelier" className="luxury-button-outline border-white text-white hover:bg-white hover:text-luxury-black">
-                            Inside the Atelier
+                        <Link to="/shop?category=tailoring" className="luxury-button-outline border-white/30 text-white hover:bg-white hover:text-luxury-black px-12 py-5 text-xs backdrop-blur-sm">
+                            Explore Tailoring
                         </Link>
                     </motion.div>
                 </div>
             </div>
 
-            {/* Side Label */}
+            {/* Scroll Indicator */}
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 2, duration: 1 }}
-                className="absolute bottom-12 right-12 hidden md:block"
+                transition={{ delay: 2.5, duration: 1 }}
+                className="absolute bottom-10 left-1/2 -translate-x-1/2"
             >
-                <p className="text-[9px] tracking-[.8em] uppercase text-white/50" style={{ writingMode: 'vertical-rl' }}>
-                    Crafted in India / Shipping Worldwide
-                </p>
+                <div className="w-[1px] h-16 bg-gradient-to-b from-white/60 to-transparent" />
             </motion.div>
         </section>
     );

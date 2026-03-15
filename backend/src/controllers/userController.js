@@ -1,42 +1,52 @@
-import * as userService from '../services/userService.js';
-import config from '../config/index.js';
+import User from '../models/userModel.js';
 import { successResponse } from '../utils/responseFormatter.js';
-import { sendWelcomeEmail, sendPasswordResetEmail } from '../services/emailService.js';
 
-// @desc    Auth user & get token
-// @route   POST /api/users/login
-// @access  Public
-const authUser = async (req, res, next) => {
+// @desc    Sync Clerk user with MongoDB
+// @route   POST /api/users/sync
+// @access  Public (protected by Clerk on frontend)
+const syncUser = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
-        const userData = await userService.authenticateUser(email, password);
+        const { clerkId, email, name, avatar } = req.body;
 
-        if (userData) {
-            res.json(successResponse(userData, 'Login successful'));
-        } else {
-            res.status(401);
-            throw new Error('Invalid email or password');
-        }
-    } catch (error) {
-        next(error);
-    }
-};
-
-// @desc    Register a new user
-// @route   POST /api/users
-// @access  Public
-const registerUser = async (req, res, next) => {
-    try {
-        const userData = await userService.registerNewUser(req.body);
-        if (userData) {
-            // Send welcome email asynchronously so it doesn't block the response
-            sendWelcomeEmail(userData.email, userData.name).catch(console.error);
-
-            res.status(201).json(successResponse(userData, 'Registration successful'));
-        } else {
+        if (!clerkId || !email) {
             res.status(400);
-            throw new Error('Invalid user data');
+            throw new Error('ClerkId and Email are required');
         }
+
+        // 1. Try to find by clerkId
+        let user = await User.findOne({ clerkId });
+        let isNew = false;
+
+        if (user) {
+            // Update existing Clerk user
+            user.name = name || user.name;
+            user.email = email || user.email;
+            user.avatar = avatar || user.avatar;
+            await user.save();
+        } else {
+            // 2. Try to find by email (for users migrating from old system)
+            user = await User.findOne({ email });
+            
+            if (user) {
+                // Link existing email user to Clerk
+                user.clerkId = clerkId;
+                user.name = name || user.name;
+                user.avatar = avatar || user.avatar;
+                await user.save();
+            } else {
+                // 3. Create brand new user
+                isNew = true;
+                user = await User.create({
+                    clerkId,
+                    email,
+                    name,
+                    avatar,
+                    role: 'user'
+                });
+            }
+        }
+
+        res.status(isNew ? 201 : 200).json(successResponse(user, 'User synced successfully'));
     } catch (error) {
         next(error);
     }
@@ -47,14 +57,16 @@ const registerUser = async (req, res, next) => {
 // @access  Private
 const getUserProfile = async (req, res, next) => {
     try {
-        const user = await userService.getUserById(req.user._id);
+        const user = await User.findById(req.user._id);
 
         if (user) {
             res.json(successResponse({
                 _id: user._id,
+                clerkId: user.clerkId,
                 name: user.name,
                 email: user.email,
-                isAdmin: user.isAdmin,
+                avatar: user.avatar,
+                role: user.role,
             }));
         } else {
             res.status(404);
@@ -65,48 +77,12 @@ const getUserProfile = async (req, res, next) => {
     }
 };
 
-// @desc    Forgot Password - Send reset email
-// @route   POST /api/users/forgotpassword
-// @access  Public
-const forgotPassword = async (req, res, next) => {
-    try {
-        const { email } = req.body;
-        const resetToken = await userService.generatePasswordResetToken(email);
-
-        const resetUrl = `${config.frontendUrl}/reset-password/${resetToken}`;
-
-        try {
-            await sendPasswordResetEmail(email, resetUrl);
-            res.status(200).json(successResponse(null, 'Password reset email sent'));
-        } catch (error) {
-            res.status(500);
-            throw new Error('Email could not be sent');
-        }
-    } catch (error) {
-        next(error);
-    }
-};
-
-
-// @desc    Reset Password
-// @route   PUT /api/users/resetpassword/:token
-// @access  Public
-const resetPassword = async (req, res, next) => {
-    try {
-        // req.params.token holds the raw token, req.body.password holds the new password
-        const updatedUser = await userService.resetPasswordWithToken(req.params.token, req.body.password);
-        res.status(200).json(successResponse(updatedUser, 'Password reset successful'));
-    } catch (error) {
-        next(error);
-    }
-};
-
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private/Admin
 const getUsers = async (req, res, next) => {
     try {
-        const users = await userService.getAllUsers();
+        const users = await User.find({}).sort({ createdAt: -1 });
         res.json(successResponse(users, 'Users fetched successfully'));
     } catch (error) {
         next(error);
@@ -118,8 +94,9 @@ const getUsers = async (req, res, next) => {
 // @access  Private/Admin
 const deleteUser = async (req, res, next) => {
     try {
-        const success = await userService.deleteUserById(req.params.id);
-        if (success) {
+        const user = await User.findById(req.params.id);
+        if (user) {
+            await user.deleteOne();
             res.json(successResponse(null, 'User removed successfully'));
         } else {
             res.status(404);
@@ -135,8 +112,15 @@ const deleteUser = async (req, res, next) => {
 // @access  Private/Admin
 const promoteUser = async (req, res, next) => {
     try {
-        const updatedUser = await userService.promoteToAdmin(req.params.id);
-        res.json(successResponse(updatedUser, 'User promoted to admin'));
+        const user = await User.findById(req.params.id);
+        if (user) {
+            user.role = 'admin';
+            const updatedUser = await user.save();
+            res.json(successResponse(updatedUser, 'User promoted to admin'));
+        } else {
+            res.status(404);
+            throw new Error('User not found');
+        }
     } catch (error) {
         next(error);
     }
@@ -147,19 +131,23 @@ const promoteUser = async (req, res, next) => {
 // @access  Private/Admin
 const revokeUserAdmin = async (req, res, next) => {
     try {
-        const updatedUser = await userService.revokeAdminRole(req.params.id);
-        res.json(successResponse(updatedUser, 'Admin role revoked'));
+        const user = await User.findById(req.params.id);
+        if (user) {
+            user.role = 'user';
+            const updatedUser = await user.save();
+            res.json(successResponse(updatedUser, 'Admin role revoked'));
+        } else {
+            res.status(404);
+            throw new Error('User not found');
+        }
     } catch (error) {
         next(error);
     }
 };
 
 export { 
-    authUser, 
-    registerUser, 
+    syncUser, 
     getUserProfile, 
-    forgotPassword, 
-    resetPassword,
     getUsers,
     deleteUser,
     promoteUser,
