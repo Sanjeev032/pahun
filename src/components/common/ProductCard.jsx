@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { Heart, ShoppingBag, Eye } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
-import { toggleWishlist } from '../../store/slices/wishlistSlice';
-import { addItemToCart } from '../../store/slices/cartSlice';
+import { toggleWishlist } from '../../redux/slices/wishlistSlice';
+import { addItemToCart } from '../../redux/slices/cartSlice';
 import LuxuryImage from './LuxuryImage';
 import { formatCurrency } from '../../utils/formatters';
 

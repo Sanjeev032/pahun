@@ -17,7 +17,7 @@ const AdminTable = ({ title, actionLabel, onAction, columns, data, renderRow }) 
                 </div>
             )}
             <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full min-w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-gray-50/50">
                             {columns.map((col, idx) => (

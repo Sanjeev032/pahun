@@ -1,43 +1,47 @@
 import { verifyToken } from '@clerk/clerk-sdk-node';
 import User from '../models/userModel.js';
 
-// Protect routes
+// Protect routes using Clerk tokens
 const protect = async (req, res, next) => {
-    let token;
+  let token;
 
-    if (
-        req.headers.authorization &&
-        req.headers.authorization.startsWith('Bearer')
-    ) {
-        try {
-            token = req.headers.authorization.split(' ')[1];
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith('Bearer')
+  ) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
 
-            // Verify the session token using Clerk
-            const decoded = await verifyToken(token, {
-                secretKey: process.env.CLERK_SECRET_KEY,
-            });
+      const decoded = await verifyToken(token);
 
-            // Find user in our DB by clerkId
-            const user = await User.findOne({ clerkId: decoded.sub });
+      // Find or create user in our DB by Clerk ID
+      let user = await User.findOne({ clerkId: decoded.sub });
 
-            if (!user) {
-                res.status(401);
-                throw new Error('User not found in database');
-            }
+      if (!user) {
+        user = await User.create({
+          clerkId: decoded.sub,
+          email: decoded.email,
+          name: decoded.firstName || decoded.email || 'User',
+          avatar: decoded.imageUrl,
+        });
+      }
 
-            req.user = user;
-            next();
-        } catch (error) {
-            console.error('Auth Error:', error.message);
-            res.status(401);
-            throw new Error('Not authorized, token failed');
-        }
-    }
-
-    if (!token) {
+      if (!user) {
         res.status(401);
-        throw new Error('Not authorized, no token');
+        throw new Error('User not found in database');
+      }
+
+      req.user = user;
+      next();
+    } catch (error) {
+      console.error('Auth Error:', error.message);
+      res.status(401);
+      throw new Error('Not authorized, token failed');
     }
+  } else {
+    res.status(401);
+    throw new Error('Not authorized, no token');
+  }
 };
 
 // Admin middleware

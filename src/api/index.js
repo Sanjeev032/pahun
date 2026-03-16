@@ -1,14 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'http://localhost:5000/api',
-});
-
-// Add a request interceptor to attach Clerk Token (if provided)
-API.interceptors.request.use((config) => {
-    // Note: In Clerk, we should ideally pass the token to this instance
-    // For now, we'll assume the token is passed in headers or handled by the caller
-    return config;
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
 });
 
 export const authAPI = {

@@ -1,170 +1,94 @@
-import React, { useState, useEffect } from 'react';
-import {
-    Users,
-    ShoppingBag,
-    CreditCard,
-    TrendingUp,
-    AlertTriangle,
-    Loader2
-} from 'lucide-react';
-import {
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    AreaChart,
-    Area
-} from 'recharts';
-import StatsCard from '../../components/admin/StatsCard';
-import AdminTable from '../../components/admin/AdminTable';
-import { formatCurrency, formatDate } from '../../utils/formatters';
-import { COMPANY_NAME } from '../../utils/constants';
-import productService from '../../services/productService';
-import orderService from '../../services/orderService';
+import React from 'react';
+import StatCard from '../../components/admin/StatCard';
+import MinimalTable from '../../components/admin/MinimalTable';
+import QuickActions from '../../components/admin/QuickActions';
+import { StockOverviewChart } from '../../components/charts/DashboardCharts';
+import { STATS_DATA, INVENTORY_DATA, RECENT_ORDERS, STOCK_DISTRIBUTION } from '../../data/adminMockData';
 
-const chartData = [
-    { month: 'Sep', revenue: 45000 },
-    { month: 'Oct', revenue: 52000 },
-    { month: 'Nov', revenue: 48000 },
-    { month: 'Dec', revenue: 61000 },
-    { month: 'Jan', revenue: 55000 },
-    { month: 'Feb', revenue: 67000 },
-];
+const Dashboard = () => {
+  // Memoize data limits for high performance
+  const displayInventory = React.useMemo(() => INVENTORY_DATA.slice(0, 5), []);
+  const displayOrders = React.useMemo(() => RECENT_ORDERS.slice(0, 5), []);
 
-const AdminDashboard = () => {
-    const [recentOrders, setRecentOrders] = useState([]);
-    const [lowStockProducts, setLowStockProducts] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
+  return (
+    <div className="space-y-10">
+      <div>
+        <h1 className="text-2xl font-light tracking-tight text-gray-900">Workspace Overview</h1>
+        <p className="text-gray-400 text-[10px] font-bold uppercase tracking-[0.5em] mt-2">Executive Dashboard</p>
+      </div>
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            setIsLoading(true);
-            try {
-                const ordersData = await orderService.getMyOrders(); // Placeholder
-                setRecentOrders(ordersData.data?.slice(0, 5) || []);
-                
-                const productsData = await productService.getProducts();
-                setLowStockProducts(productsData.products?.filter(p => p.countInStock < 5).slice(0, 3) || []);
-            } catch (err) {
-                console.error('Dashboard fetch error:', err);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+      {/* Top Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {STATS_DATA.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
+      </div>
 
-        fetchDashboardData();
-    }, []);
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Main Content Area (Left 8/12) */}
+        <div className="lg:col-span-8 space-y-8">
+          
+          {/* Inventory Table */}
+          <MinimalTable 
+            title="Operational Inventory"
+            columns={['Product', 'Category', 'Stock', 'Sold', 'Status']}
+            data={displayInventory}
+            renderRow={(item, idx) => (
+              <tr key={idx} className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
+                <td className="px-8 py-5 text-[10px] font-bold text-gray-900 uppercase tracking-wide">{item.name}</td>
+                <td className="px-8 py-5 text-[10px] text-gray-500 font-medium">{item.category}</td>
+                <td className="px-8 py-5 text-[10px] text-gray-900 font-bold">{item.stock}</td>
+                <td className="px-8 py-5 text-[10px] text-gray-500">{item.sold}</td>
+                <td className="px-8 py-5">
+                  <span className={`px-3 py-1.5 rounded-full text-[8px] font-bold uppercase tracking-widest ${
+                    item.status === 'In Stock' ? 'bg-emerald-50 text-emerald-600' : 
+                    item.status === 'Low Stock' ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+                  }`}>
+                    {item.status}
+                  </span>
+                </td>
+              </tr>
+            )}
+          />
 
-    return (
-        <div className="space-y-12">
-            <header>
-                <h1 className="text-3xl font-light tracking-extra uppercase mb-2">{COMPANY_NAME} ATELIER ARCHIVE</h1>
-                <p className="text-[10px] uppercase tracking-widest text-gray-400">Operational Intelligence & Sales Analytics</p>
-            </header>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard title="Total Revenue" value={formatCurrency(245000)} icon={CreditCard} change="+12.5%" isPositive={true} />
-                <StatsCard title="Total Orders" value="1,240" icon={ShoppingBag} change="+8.2%" isPositive={true} />
-                <StatsCard title="Active Customers" value="892" icon={Users} change="+5.1%" isPositive={true} />
-                <StatsCard title="Average Order" value={formatCurrency(12400)} icon={TrendingUp} change="-2.4%" isPositive={false} />
-            </div>
-
-            {/* Charts Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white p-8 border border-gray-100 shadow-sm">
-                    <h4 className="text-xs uppercase tracking-extra font-bold mb-8">Revenue Performance</h4>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData}>
-                                <defs>
-                                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#C5A039" stopOpacity={0.1} />
-                                        <stop offset="95%" stopColor="#C5A039" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F0F0F0" />
-                                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#A0A0A0' }} />
-                                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 700, fill: '#A0A0A0' }} />
-                                <Tooltip
-                                    contentStyle={{ border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', borderRadius: '0' }}
-                                    labelStyle={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 'bold' }}
-                                />
-                                <Area type="monotone" dataKey="revenue" stroke="#C5A039" strokeWidth={2} fillOpacity={1} fill="url(#colorRev)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="bg-luxury-black text-white p-8 overflow-hidden relative">
-                    <AlertTriangle className="absolute -top-10 -right-10 text-white/5" size={200} />
-                    <h4 className="text-xs uppercase tracking-extra font-bold mb-8 text-luxury-gold">Stock Alerts</h4>
-                    {isLoading ? (
-                        <div className="flex justify-center py-10">
-                            <Loader2 size={24} className="animate-spin text-luxury-gold" />
-                        </div>
-                    ) : (
-                        <div className="space-y-6 relative z-10">
-                            {lowStockProducts.length > 0 ? lowStockProducts.map((product) => (
-                                <div key={product._id} className="flex gap-4 items-center pb-6 border-b border-white/10 last:border-0 last:pb-0">
-                                    <div className="w-12 h-12 bg-white/5 overflow-hidden">
-                                        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-                                    </div>
-                                    <div>
-                                        <h5 className="text-[10px] uppercase font-bold tracking-widest mb-1">{product.name}</h5>
-                                        <p className="text-[9px] text-white/40 uppercase tracking-widest">
-                                            {product.countInStock === 0 ? 'Out of Stock' : `Only ${product.countInStock} units remaining`}
-                                        </p>
-                                    </div>
-                                    <button className="ml-auto text-[9px] uppercase tracking-widest text-luxury-gold hover:text-white transition-colors underline">Restock</button>
-                                </div>
-                            )) : (
-                                <p className="text-[9px] text-white/40 uppercase tracking-widest">Inventory is healthy.</p>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Recent Orders Table */}
-            <AdminTable
-                title="Recent Fulfillment Orders"
-                actionLabel="View Archive"
-                columns={[
-                    { label: 'Order ID' },
-                    { label: 'Member' },
-                    { label: 'Total Price' },
-                    { label: 'Status' },
-                    { label: 'Actions' }
-                ]}
-                data={recentOrders}
-                renderRow={(order) => (
-                    <tr key={order._id} className="border-b border-gray-50 hover:bg-luxury-ivory/30 transition-colors">
-                        <td className="px-8 py-6 text-[10px] font-bold tracking-widest">#{order._id.slice(-8).toUpperCase()}</td>
-                        <td className="px-8 py-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] uppercase font-bold text-luxury-gold">
-                                    {order.user?.name?.charAt(0) || 'M'}
-                                </div>
-                                <span className="text-[11px] font-medium text-gray-700">{order.user?.name || 'Curated Member'}</span>
-                            </div>
-                        </td>
-                        <td className="px-8 py-6 text-xs font-bold tracking-tight text-gray-900">{formatCurrency(order.totalPrice)}</td>
-                        <td className="px-8 py-6">
-                            <span className="text-[8px] uppercase tracking-widest px-3 py-1 rounded-full bg-luxury-gold/10 text-luxury-gold font-bold">
-                                {order.isDelivered ? 'Delivered' : 'Processing'}
-                            </span>
-                        </td>
-                        <td className="px-8 py-6">
-                            <button className="text-[9px] uppercase tracking-widest font-bold text-gray-400 hover:text-black transition-colors">Details</button>
-                        </td>
-                    </tr>
-                )}
-            />
+          {/* Recent Orders Table */}
+          <MinimalTable 
+            title="Latest Transactions"
+            columns={['ID', 'Product', 'Qty', 'Price', 'Status']}
+            data={displayOrders}
+            renderRow={(order, idx) => (
+              <tr key={idx} className="hover:bg-gray-50/50 transition-colors border-b border-gray-50 last:border-0">
+                <td className="px-8 py-5 text-[9px] font-mono text-gray-400">{order.id}</td>
+                <td className="px-8 py-5 text-[10px] font-bold text-gray-900 uppercase tracking-wide">{order.product}</td>
+                <td className="px-8 py-5 text-[10px] text-gray-500">{order.quantity}</td>
+                <td className="px-8 py-5 text-[10px] font-bold text-gray-900">{order.price}</td>
+                <td className="px-8 py-5">
+                  <span className={`px-3 py-1.5 rounded-full text-[8px] font-bold uppercase tracking-widest ${
+                    order.status === 'Delivered' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
+                  }`}>
+                    {order.status}
+                  </span>
+                </td>
+              </tr>
+            )}
+          />
         </div>
-    );
+
+        {/* Sidebar Area (Right 4/12) */}
+        <div className="lg:col-span-4 space-y-8">
+          {/* Pie Chart Section - Lazy loaded via DashboardCharts */}
+          <div className="bg-white rounded-2xl p-8 border border-gray-100 shadow-sm">
+            <h3 className="text-[10px] font-bold text-gray-900 mb-8 uppercase tracking-[0.3em]">Stock Balance</h3>
+            <div className="h-64">
+              <StockOverviewChart data={STOCK_DISTRIBUTION} />
+            </div>
+          </div>
+
+          <QuickActions />
+        </div>
+      </div>
+    </div>
+  );
 };
 
-export default AdminDashboard;
-
+export default Dashboard;
